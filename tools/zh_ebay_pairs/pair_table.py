@@ -90,7 +90,7 @@ def main():
                 hows = {z["how"] for z in zrows}
                 stats["tc-jp" if hows == {"tc-jp"} else "fraco"] += 1
 
-    dump = requests.get("https://tcgcsv.com/last-updated.txt", headers={"User-Agent": "pokemon-longterm-outlook/0.1"}).text.strip()
+    dump = requests.get("https://tcgcsv.com/last-updated.txt", timeout=60, headers={"User-Agent": "pokemon-longterm-outlook/0.1"}).text.strip()
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     print(f"Coleta {now} · tcgcsv dump {dump} · "
           f"catálogo ZH {zh['_meta']['generated_on']} · {len(sets)} sets EN 2022-2025 · "

@@ -22,7 +22,7 @@ ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "results" / "zh_ebay_pairs.json"  # local, gitignored
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from src.ebay_api import (EbayClient, EbayApiError, EbayBudgetExceeded, SEARCH_URL,  # noqa: E402
+from src.ebay_api import (EbayClient, EbayApiError, EbayAuthError, EbayBudgetExceeded, SEARCH_URL,  # noqa: E402
                           CCG_CATEGORY_ID, parse_search_payload)
 import guards  # noqa: E402
 import pair_table as pt  # noqa: E402
@@ -63,7 +63,7 @@ def plausible(client, query, ok):
                   "filter": "price:[1..],priceCurrency:USD,buyingOptions:{FIXED_PRICE}",
                   "aspect_filter": f"categoryId:{CCG_CATEGORY_ID},{NM_ASPECT}"}
         items = parse_search_payload(client._request_search_json(SEARCH_URL + "?" + urllib.parse.urlencode(params)))
-    except EbayBudgetExceeded:
+    except (EbayBudgetExceeded, EbayAuthError):
         raise
     except Exception as exc:  # erro de fonte: n/d honesto
         return [], None, f"erro: {type(exc).__name__}", 0
@@ -305,7 +305,7 @@ def render(d):
 def main(argv):
     top_n = int(argv[0]) if argv and argv[0].isdigit() else 120
     if "--render" in argv:
-        render(json.load(open(OUT, encoding="utf-8")))
+        render(json.loads(OUT.read_text(encoding="utf-8")))
         return
     offset = int(argv[argv.index("--offset") + 1]) if "--offset" in argv else 0
     years = parse_years(argv[argv.index("--years") + 1]) if "--years" in argv else YEARS
@@ -313,9 +313,9 @@ def main(argv):
     client.max_calls = 500
     d = collect(top_n, client, offset, years)
     OUT.parent.mkdir(exist_ok=True)
-    json.dump(d, open(OUT, "w", encoding="utf-8"), ensure_ascii=False, indent=1)  # coleta salva antes de verificar
+    OUT.write_text(json.dumps(d, ensure_ascii=False, indent=1), encoding="utf-8")  # coleta salva antes de verificar
     verify(d, client)
-    json.dump(d, open(OUT, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+    OUT.write_text(json.dumps(d, ensure_ascii=False, indent=1), encoding="utf-8")
     render(d)
 
 

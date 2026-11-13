@@ -445,3 +445,12 @@ def test_plausible_keeps_at_most_ten():
 def test_render_without_verification_says_so(capsys):
     ebay_pair.render(dump())
     assert "NÃO verificados" in capsys.readouterr().out
+
+
+def test_plausible_propagates_auth_error():
+    class AuthFailClient:
+        def _request_search_json(self, url):
+            raise ebay_pair.EbayAuthError("credencial invalida")
+
+    with pytest.raises(ebay_pair.EbayAuthError):
+        ebay_pair.plausible(AuthFailClient(), "q", lambda t: True)
